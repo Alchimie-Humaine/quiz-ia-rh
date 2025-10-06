@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz IA pour RH</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            min-height: 90vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5, #06b6d4);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            background: rgba(255,255,255,0.3);
+            height: 8px;
+            border-radius: 4px;
+            margin: 20px 0 10px;
+            overflow: hidden;
+        }
+
+        .progress {
+            background: white;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .content {
+            padding: 30px 20px;
+        }
+
+        .welcome-screen, .question-screen, .results-screen {
+            display: none !important;
+            text-align: center;
+        }
+
+        .welcome-screen.active, .question-screen.active, .results-screen.active {
+            display: block !important;
+        }
+
+        .tools-wrapper {
+            display: none !important;
+            overflow: hidden !important;
+        }
+        
+        .tools-list {
+            display: none !important;
+            overflow: hidden !important;
+            max-width: 100% !important;
+        }
+        
+        .tool-item {
+            display: none !important;
+        }
+
+        .results-screen.active .tools-wrapper {
+            display: block !important;
+            width: 100% !important;
+            overflow: hidden !important;
+        }
+        
+        .results-screen.active .tools-list {
+            display: block !important;
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+            overflow: hidden !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        
+        .results-screen.active .tool-item {
+            display: flex !important;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .tool-item:not(.results-screen.active *) {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            height: 0 !important;
+            width: 0 !important;
+            overflow: hidden !important;
+            position: absolute !important;
+            top: -9999px !important;
+            left: -9999px !important;
+        }
+        
+        .tool-emoji:not(.results-screen.active *) {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        
+        .content {
+            overflow: hidden !important;
+        }
+        
+        .results-screen {
+            overflow: hidden !important;
+        }
+
+        .phase-badge {
+            display: inline-block;
+            background: #f0f9ff;
+            color: #0369a1;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .answers {
+            space-y: 15px;
+        }
+
+        .answer {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 15px 20px;
+            margin: 10px 0;
+            border: 2px solid #e5e7eb;
+            border-radius: 15px;
+            background: #f9fafb;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-size: 1em;
+        }
+
+        .answer:hover {
+            background: #f3f4f6;
+            border-color: #4f46e5;
+            transform: translateY(-2px);
+        }
+
+        .answer.selected {
+            background: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+
+        .answer.correct {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+
+        .answer.incorrect {
+            background: #ef4444;
+            border-color: #ef4444;
+            color: white;
+        }
+
+        .answer-checkbox {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            accent-color: #4f46e5;
+            cursor: pointer;
+        }
+
+        input[type="radio"], input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            accent-color: #4f46e5;
+            cursor: pointer;
+        }
+
+        .answer-text {
+            flex: 1;
+        }
+
+        .question-type {
+            font-size: 0.9em;
+            color: #6b7280;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        .validate-btn {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 20px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .validate-btn:hover {
+            background: #047857;
+            transform: translateY(-1px);
+        }
+
+        .validate-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .explanation {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f0f9ff;
+            border-radius: 15px;
+            border-left: 4px solid #4f46e5;
+            display: none;
+            text-align: left;
+        }
+
+        .explanation.show {
+            display: block;
+        }
+
+        .btn {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px 10px;
+        }
+
+        .btn:hover {
+            background: #4338ca;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .score {
+            font-size: 3em;
+            font-weight: bold;
+            color: #4f46e5;
+            margin: 20px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border-radius: 25px;
+            margin: 10px;
+            font-weight: 600;
+        }
+
+        .tools-list {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .tool-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tool-emoji {
+            font-size: 1.5em;
+            margin-right: 15px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 5px;
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Quiz IA pour RH</h1>
+            <p>Découvrez l'intelligence artificielle dans votre métier</p>
+            <div class="progress-bar">
+                <div class="progress" id="progressBar"></div>
+            </div>
+            <div id="progressText">1/20 questions</div>
+        </div>
+
+        <div class="content">
+            <!-- Écran d'accueil -->
+            <div class="welcome-screen active" id="welcomeScreen">
+                <h2>Bienvenue ! 👋</h2>
+                <p style="margin: 20px 0; font-size: 1.1em; line-height: 1.6;">
+                    Ce quiz vous fera découvrir l'IA de manière ludique, puis l'appliquera à votre quotidien RH.
+                </p>
+                <div style="margin: 30px 0;">
+                    <div style="background: #f0f9ff; padding: 20px; border-radius: 15px; margin: 15px 0;">
+                        <strong>🎯 Phase 1:</strong> Découverte générale
+                    </div>
+                    <div style="background: #f0f9ff; padding: 20px; border-radius: 15px; margin: 15px 0;">
+                        <strong>🧠 Phase 2:</strong> Concepts clés
+                    </div>
+                    <div style="background: #f0f9ff; padding: 20px; border-radius: 15px; margin: 15px 0;">
+                        <strong>💼 Phase 3:</strong> Applications RH
+                    </div>
+                </div>
+                <button class="btn" onclick="startQuiz()">Commencer le quiz</button>
+            </div>
+
+            <!-- Écran de question -->
+            <div class="question-screen" id="questionScreen">
+                <div class="phase-badge" id="phaseBadge">Phase 1: Découverte</div>
+                <div class="question" id="questionText"></div>
+                <div class="question-type" id="questionType"></div>
+                <div class="answers" id="answersContainer"></div>
+                <button class="validate-btn" id="validateBtn" onclick="validateAnswer()">Valider ma réponse</button>
+                <div class="explanation" id="explanation"></div>
+                <button class="btn" id="nextBtn" onclick="nextQuestion()" style="display: none;">Question suivante</button>
+            </div>
+
+            <!-- Écran de résultats -->
+            <div class="results-screen" id="resultsScreen">
+                <h2>🎉 Félicitations !</h2>
+                <div class="score" id="finalScore"></div>
+                <div id="badgeContainer"></div>
+                <p id="resultMessage"></p>
+                
+                <div class="tools-list">
+                    <h3>🛠️ Outils IA recommandés pour RH :</h3>
+                    <div class="tool-item">
+                        <span class="tool-emoji">💬</span>
+                        <div>
+                            <strong>ChatGPT / Claude / Gemini</strong><br>
+                            <small>Rédaction d'offres d'emploi, emails, formations, contrats</small>
+                        </div>
+                    </div>
+                    <div class="tool-item">
+                        <span class="tool-emoji">📊</span>
+                        <div>
+                            <strong>HiQ / Workable / SmartRecruiters</strong><br>
+                            <small>Analyse de CV automatique et matching candidats</small>
+                        </div>
+                    </div>
+                    <div class="tool-item">
+                        <span class="tool-emoji">🎥</span>
+                        <div>
+                            <strong>HireVue / Pymetrics</strong><br>
+                            <small>Entretiens vidéo avec analyse comportementale IA</small>
+                        </div>
+                    </div>
+                    <div class="tool-item">
+                        <span class="tool-emoji">📈</span>
+                        <div>
+                            <strong>Visier / Workday / BambooHR</strong><br>
+                            <small>Analytics RH prédictifs et tableaux de bord</small>
+                        </div>
+                    </div>
+                    <div class="tool-item">
+                        <span class="tool-emoji">🤖</span>
+                        <div>
+                            <strong>Mya / Olivia (Paradox)</strong><br>
+                            <small>Chatbots de recrutement et assistance candidats</small>
+                        </div>
+                    </div>
+                    <div class="tool-item">
+                        <span class="tool-emoji">🎓</span>
+                        <div>
+                            <strong>Coursera Coach / LinkedIn Learning</strong><br>
+                            <small>Formation personnalisée pilotée par IA</small>
+                        </div>
+                    </div>
+                    <div class="tool-item">
+                        <span class="tool-emoji">⚖️</span>
+                        <div>
+                            <strong>Textio / Gender Decoder</strong><br>
+                            <small>Optimisation inclusive des offres d'emploi</small>
+                        </div>
+                    </div>
+                    <div class="tool-item">
+                        <span class="tool-emoji">📋</span>
+                        <div>
+                            <strong>Notion AI / Otter.ai</strong><br>
+                            <small>Prise de notes automatique et synthèses d'entretiens</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="restartQuiz()">Recommencer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            // Phase 1: Découverte générale (5 questions)
+            {
+                phase: 1,
+                phaseTitle: "Phase 1: Découverte",
+                question: "Parmi ces assistants, lesquels utilisent réellement l'intelligence artificielle ? (Plusieurs réponses possibles)",
+                answers: [
+                    "ChatGPT",
+                    "Claude", 
+                    "Microsoft Copilot",
+                    "Gemini",
+                    "Francis"
+                ],
+                correct: [0, 1, 2, 3],
+                type: "multiple",
+                explanation: "ChatGPT, Claude, Microsoft Copilot et Gemini sont de vrais assistants IA capables de comprendre et générer du texte. Francis est un prénom et ne correspond à aucun assistant IA connu."
+            },
+            {
+                phase: 1,
+                phaseTitle: "Phase 1: Découverte",
+                question: "Dans la vie quotidienne, quels exemples d'IA utilisez-vous probablement sans le savoir ? (Plusieurs réponses possibles)",
+                answers: [
+                    "Les recommandations Netflix",
+                    "Mon grille-pain classique",
+                    "Google Maps pour les itinéraires",
+                    "Les suggestions d'autocomplétion sur mon téléphone",
+                    "Ma montre mécanique"
+                ],
+                correct: [0, 2, 3],
+                type: "multiple",
+                explanation: "Netflix (recommandations personnalisées), Google Maps (calcul d'itinéraires optimaux) et l'autocomplétion (prédiction de texte) utilisent tous des algorithmes d'IA pour améliorer votre expérience."
+            },
+            {
+                phase: 1,
+                phaseTitle: "Phase 1: Découverte",
+                question: "Qu'est-ce qui a principalement accéléré les découvertes récentes en IA ?",
+                answers: [
+                    "La numérisation massive des données et la puissance de calcul",
+                    "L'invention des smartphones",
+                    "La création des réseaux sociaux",
+                    "L'augmentation du nombre d'ingénieurs"
+                ],
+                correct: 0,
+                type: "single",
+                explanation: "L'explosion des données numériques (Big Data) combinée à l'augmentation de la puissance de calcul (GPU, cloud) a permis d'entraîner des modèles d'IA beaucoup plus performants ces dernières années."
+            },
+            {
+                phase: 1,
+                phaseTitle: "Phase 1: Découverte",
+                question: "Parmi ces assistants vocaux, lesquels utilisent l'intelligence artificielle ? (Plusieurs réponses possibles)",
+                answers: [
+                    "Alexa (Amazon)",
+                    "Siri (Apple)", 
+                    "Google Assistant",
+                    "Un répondeur téléphonique classique",
+                    "Cortana (Microsoft)"
+                ],
+                correct: [0, 1, 2, 4],
+                type: "multiple",
+                explanation: "Alexa, Siri, Google Assistant et Cortana utilisent tous l'IA pour comprendre le langage naturel, traiter vos demandes et vous répondre de manière contextuelle. Un répondeur classique ne fait que jouer un message pré-enregistré."
+            },
+            {
+                phase: 1,
+                phaseTitle: "Phase 1: Découverte",
+                question: "Quelle est la principale 'nourriture' de l'IA pour apprendre ?",
+                answers: [
+                    "Les données",
+                    "L'électricité",
+                    "Les câbles",
+                    "Les écrans"
+                ],
+                correct: 0,
+                type: "single",
+                explanation: "L'IA se 'nourrit' principalement de données ! Plus elle a accès à des données de qualité et variées, mieux elle peut apprendre, s'améliorer et faire des prédictions précises."
+            },
+            
+            // Phase 2: Concepts fondamentaux (5 questions)
+            {
+                phase: 2,
+                phaseTitle: "Phase 2: Concepts clés",
+                question: "Que signifie 'LLM' dans le contexte de l'IA ?",
+                answers: [
+                    "Large Language Model",
+                    "Limited Learning Machine",
+                    "Linear Logic Method",
+                    "Local Language Memory"
+                ],
+                correct: 0,
+                type: "single",
+                explanation: "LLM signifie 'Large Language Model' (Grand Modèle de Langage). Ces modèles sont entraînés sur d'énormes quantités de texte pour comprendre et générer du langage naturel, comme GPT-4 ou Claude."
+            },
+            {
+                phase: 2,
+                phaseTitle: "Phase 2: Concepts clés",
+                question: "Quelles sont les caractéristiques d'un bon 'prompt' pour l'IA ? (Plusieurs réponses possibles)",
+                answers: [
+                    "Être clair et précis",
+                    "Être le plus court possible",
+                    "Donner du contexte",
+                    "Inclure des exemples si nécessaire",
+                    "Utiliser des mots techniques compliqués"
+                ],
+                correct: [0, 2, 3],
+                type: "multiple",
+                explanation: "Un bon prompt doit être clair, donner du contexte et inclure des exemples si nécessaire. La longueur importe moins que la clarté, et les mots simples sont souvent plus efficaces que le jargon technique."
+            },
+            {
+                phase: 2,
+                phaseTitle: "Phase 2: Concepts clés",
+                question: "Quelle est la différence entre un 'agent IA' et un 'assistant IA' ?",
+                answers: [
+                    "L'agent peut agir de manière autonome, l'assistant nécessite des instructions",
+                    "Il n'y a aucune différence",
+                    "L'assistant est plus intelligent que l'agent",
+                    "L'agent ne peut que répondre, l'assistant peut créer"
+                ],
+                correct: 0,
+                type: "single",
+                explanation: "Un agent IA peut prendre des décisions et effectuer des actions de manière autonome, tandis qu'un assistant IA répond à des demandes spécifiques et nécessite des instructions humaines pour fonctionner."
+            },
+            {
+                phase: 2,
+                phaseTitle: "Phase 2: Concepts clés",
+                question: "Que signifie 'Machine Learning' (Apprentissage Automatique) ?",
+                answers: [
+                    "La capacité d'une machine à apprendre à partir de données",
+                    "L'assemblage physique des ordinateurs",
+                    "La vitesse de traitement des processeurs",
+                    "La connexion internet des machines"
+                ],
+                correct: 0,
+                type: "single",
+                explanation: "Le Machine Learning permet aux machines d'apprendre et de s'améliorer automatiquement à partir de données, sans être explicitement programmées pour chaque tâche spécifique."
+            },
+            {
+                phase: 2,
+                phaseTitle: "Phase 2: Concepts clés",
+                question: "Quels sont les principaux types d'IA que vous pouvez rencontrer ? (Plusieurs réponses possibles)",
+                answers: [
+                    "IA générative (crée du contenu)",
+                    "IA prédictive (fait des prévisions)",
+                    "IA de reconnaissance (images, voix)",
+                    "IA de cuisine (fait la cuisine)",
+                    "IA conversationnelle (chatbots)"
+                ],
+                correct: [0, 1, 2, 4],
+                type: "multiple",
+                explanation: "L'IA générative crée du contenu, l'IA prédictive fait des prévisions, l'IA de reconnaissance analyse images/voix, et l'IA conversationnelle dialogue. L'IA ne fait pas physiquement la cuisine !"
+            },
+            
+            // Phase 3: Applications RH (10 questions)
+            {
+                phase: 3,
+                phaseTitle: "Phase 3: Applications RH",
+                question: "Dans quels domaines RH l'IA peut-elle vous assister efficacement ? (Plusieurs réponses possibles)",
+                answers: [
+                    "Rédaction d'offres d'emploi",
+                    "Tri automatique de CV",
+                    "Création de parcours de formation personnalisés",
+                    "Remplacement total des managers",
+                    "Prédiction des risques de turnover",
+                    "Planification des pauses café"
+                ],
+                correct: [0, 1, 2, 4],
+                type: "multiple",
+                explanation: "L'IA peut aider pour la rédaction, le tri de CV, la formation personnalisée et les prédictions RH. Elle ne remplace pas les managers et la planification des pauses reste très humaine !"
+            },
+            {
+                phase: 3,
+                phaseTitle: "Phase 3: Applications RH",
+                question: "Pour analyser 200 CV rapidement, quelle solution IA serait la plus efficace ?",
+                answers: [
+                    "Un système de parsing et matching automatique",
+                    "Demander à ChatGPT de les lire un par un",
+                    "Utiliser Excel sans IA",
+                    "Les imprimer et les trier manuellement"
+                ],
+                correct: 0,
+                type: "single",
+                explanation: "Les systèmes de parsing automatique (comme ceux d'HiQ ou Workable) peuvent extraire et analyser les informations de centaines de CV en quelques minutes, en les classant selon vos critères."
+            },
+            {
+                phase: 3,
+                phaseTitle: "Phase 3: Applications RH",
+                question: "Comment l'IA transforme-t-elle la formation en entreprise ? (Plusieurs réponses possibles)",
+                answers: [
+                    "Création de contenus pédagogiques adaptatifs",
+                    "Personnalisation des parcours selon les besoins",
+                    "Évaluation automatique des compétences",
+                    "Élimination complète des formateurs",
+                    "Recommandations de formations ciblées"
+                ],
+                correct: [0, 1, 2, 4],
+                type: "multiple",
+                explanation: "L'IA révolutionne la formation par la personnalisation, l'adaptativité, l'évaluation automatique et les recommandations ciblées. Elle complète mais ne remplace pas les formateurs humains."
+            },
+            {
+                phase: 3,
+                phaseTitle: "Phase 3: Applications RH",
+                question: "Dans la gestion des compétences, l'IA peut aider à :",
+                answers: [
+                    "Identifier automatiquement les gaps de compétences et suggérer des formations",
+                    "Décider qui licencier en premier",
+                    "Remplacer les entretiens annuels",
+                    "Fixer les salaires automatiquement"
+                ],
+                correct: 0,
+                type: "single",
+                explanation: "L'IA excelle dans l'analyse des écarts de compétences en comparant les profils actuels aux besoins futurs, et peut recommander des formations personnalisées pour combler ces gaps."
+            },
+            {
+                phase: 3,
+                phaseTitle: "Phase 3: Applications RH",
+                question: "Pour la gestion administrative RH, quelles tâches l'IA peut-elle automatiser ? (Plusieurs réponses possibles)",
+                answers: [
+                    "Génération automatique de contrats types",
+                    "Gestion des congés et absences",
+                    "Calcul automatique des paies complexes",
+                    "Négociation des augmentations avec les employés",
+                    "Classification et archivage de documents RH"
+                ],
+                correct: [0, 1, 2, 4],
+                type: "multiple",
+                explanation: "L'IA peut automatiser la génération de documents, la gestion des congés, les calculs de paie et le classement. La négociation salariale reste un processus humain nécessitant empathie et contexte."
+            },
+            {
+                phase: 3,
+                phaseTitle: "Phase 3: Applications RH",
+                question: "Quelles sont les façons dont l'IA peut réduire les biais de recrutement ? (Plusieurs réponses possibles)",
+                answers: [
+                    "Anonymiser automatiquement les CV",
+                    "Se concentrer uniquement sur les compétences objectives",
+                    "Analyser les formulations des offres d'emploi pour détecter les biais",
+                    "Privilégier automatiquement certains profils",
+                    "Utiliser des critères standardisés pour tous"
+                ],
+                correct: [0, 1, 2, 4],
+                type: "multiple",
+                explanation: "L'IA peut anonymiser les CV, analyser objectivement les compétences, détecter les biais dans les offres d'emploi et standardiser les critères. Elle ne doit jamais privilégier automatiquement certains profils."
+            },
+            {
+                phase: 3,
+                phaseTitle: "Phase 3: Applications RH",
+                question: "Pour la gestion des talents, l'IA peut aider à :",
+                answers: [
+                    "Prédire les risques de turnover et identifier les hauts potentiels",
+                    "Seulement calculer les salaires",
+                    "Remplacer les managers",
+                    "Organiser les pots d'entreprise"
+                ],
+                correct: 0,
+                type: "single",
+                explanation: "L'IA analytique peut traiter de nombreuses données RH pour prédire quels employés risquent de partir, identifier les talents à haut potentiel, et suggérer des plans de développement personnalisés."
+            },
+            {
+                phase: 3,
+                phaseTitle: "Phase 3: Applications RH",
+                question: "Quels risques faut-il surveiller avec l'IA en RH ? (Plusieurs réponses possibles)",
+                answers: [
+                    "Biais algorithmiques reproduisant les discriminations",
+                    "Sur-dépendance à la technologie",
+                    "Questions de confidentialité des données",
+                    "Risques de cyberattaques sur les serveurs",
+                    "Perte du contact humain",
+                    "Problèmes de conformité RGPD"
+                ],
+                correct: [0, 1, 2, 4, 5],
+                type: "multiple",
+                explanation: "Les principaux risques IA en RH sont les biais algorithmiques, la sur-dépendance technologique, la confidentialité des données, la perte de contact humain et la conformité RGPD. Les cyberattaques sont un risque informatique général, pas spécifique à l'IA."
+            },
+            {
+                phase: 3,
+                phaseTitle: "Phase 3: Applications RH",
+                question: "Pour l'onboarding (intégration) des nouveaux employés, l'IA peut :",
+                answers: [
+                    "Personnaliser le parcours selon le poste et créer du contenu adapté",
+                    "Seulement envoyer les mêmes documents à tous",
+                    "Remplacer complètement le manager",
+                    "Éliminer toute interaction humaine"
+                ],
+                correct: 0,
+                type: "single",
+                explanation: "L'IA peut créer des parcours d'onboarding personnalisés selon le poste, générer du contenu de formation adapté, planifier des rencontres pertinentes, et suivre la progression du nouvel employé."
+            },
+            {
+                phase: 3,
+                phaseTitle: "Phase 3: Applications RH",
+                question: "Votre plus grand défi en tant que RH : manquer de temps. Comment l'IA peut-elle vous aider concrètement ?",
+                answers: [
+                    "Automatiser les tâches répétitives et générer des documents types",
+                    "Travailler à votre place pendant vos congés",
+                    "Éliminer tous les entretiens",
+                    "Supprimer le besoin de communiquer"
+                ],
+                correct: 0,
+                type: "single",
+                explanation: "L'IA peut automatiser la rédaction de contrats types, générer des comptes-rendus d'entretien, planifier automatiquement les rendez-vous, pré-qualifier les candidatures, vous libérant du temps pour les tâches à forte valeur ajoutée humaine."
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let userAnswers = [];
+        let currentShuffledAnswers = [];
+        let selectedAnswers = [];
+
+        function updateProgress() {
+            const totalQuestions = 20;
+            const progress = ((currentQuestion + 1) / totalQuestions) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressText').textContent = `${currentQuestion + 1}/${totalQuestions} questions`;
+        }
+
+        function startQuiz() {
+            document.getElementById('welcomeScreen').classList.remove('active');
+            document.getElementById('questionScreen').classList.add('active');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const question = questions[currentQuestion];
+            
+            document.getElementById('welcomeScreen').classList.remove('active');
+            document.getElementById('resultsScreen').classList.remove('active');
+            document.getElementById('questionScreen').classList.add('active');
+            
+            document.getElementById('phaseBadge').textContent = question.phaseTitle;
+            document.getElementById('questionText').textContent = question.question;
+            
+            const typeText = question.type === 'multiple' ? 
+                '(Plusieurs réponses possibles - cochez toutes les bonnes réponses)' : 
+                '(Une seule réponse possible)';
+            document.getElementById('questionType').textContent = typeText;
+            
+            const answersContainer = document.getElementById('answersContainer');
+            answersContainer.innerHTML = '';
+            
+            const shuffledAnswers = question.answers.map((answer, index) => ({
+                text: answer,
+                originalIndex: index,
+                isCorrect: question.type === 'single' ? 
+                    index === question.correct : 
+                    question.correct.includes(index)
+            }));
+            
+            for (let i = shuffledAnswers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledAnswers[i], shuffledAnswers[j]] = [shuffledAnswers[j], shuffledAnswers[i]];
+            }
+            
+            currentShuffledAnswers = shuffledAnswers;
+            selectedAnswers = [];
+            
+            shuffledAnswers.forEach((answer, index) => {
+                const answerDiv = document.createElement('div');
+                answerDiv.className = 'answer';
+                
+                if (question.type === 'multiple') {
+                    answerDiv.innerHTML = `
+                        <input type="checkbox" class="answer-checkbox" id="answer-${index}" onchange="toggleAnswer(${index})">
+                        <span class="answer-text">${answer.text}</span>
+                    `;
+                } else {
+                    answerDiv.innerHTML = `
+                        <input type="radio" name="single-answer" class="answer-checkbox" id="answer-${index}" onchange="selectSingleAnswer(${index})">
+                        <span class="answer-text">${answer.text}</span>
+                    `;
+                }
+                
+                answersContainer.appendChild(answerDiv);
+            });
+            
+            document.getElementById('validateBtn').style.display = 'inline-block';
+            document.getElementById('validateBtn').disabled = false;
+            
+            document.getElementById('explanation').classList.remove('show');
+            document.getElementById('nextBtn').style.display = 'none';
+            updateProgress();
+        }
+
+        function toggleAnswer(index) {
+            const checkbox = document.getElementById(`answer-${index}`);
+            const answerDiv = checkbox.parentElement;
+            
+            if (checkbox.checked) {
+                selectedAnswers.push(index);
+                answerDiv.classList.add('selected');
+            } else {
+                selectedAnswers = selectedAnswers.filter(i => i !== index);
+                answerDiv.classList.remove('selected');
+            }
+        }
+
+        function selectSingleAnswer(selectedIndex) {
+            selectedAnswers = [selectedIndex];
+            
+            const answers = document.querySelectorAll('.answer');
+            answers.forEach((answerDiv, index) => {
+                const radio = answerDiv.querySelector('input[type="radio"]');
+                if (index === selectedIndex) {
+                    answerDiv.classList.add('selected');
+                    radio.checked = true;
+                } else {
+                    answerDiv.classList.remove('selected');
+                    radio.checked = false;
+                }
+            });
+        }
+
+        function validateAnswer() {
+            const question = questions[currentQuestion];
+            const answers = document.querySelectorAll('.answer');
+            
+            if (question.type === 'single') {
+                if (selectedAnswers.length > 0) {
+                    const selectedIndex = selectedAnswers[0];
+                    const selectedAnswer = currentShuffledAnswers[selectedIndex];
+                    const isCorrect = selectedAnswer.isCorrect;
+                    
+                    userAnswers[currentQuestion] = selectedAnswer.originalIndex;
+                    
+                    if (isCorrect) {
+                        score++;
+                    }
+                } else {
+                    userAnswers[currentQuestion] = null;
+                }
+                
+                answers.forEach((answerDiv, index) => {
+                    const radio = answerDiv.querySelector('input[type="radio"]');
+                    if (radio) radio.disabled = true;
+                    
+                    const answerData = currentShuffledAnswers[index];
+                    
+                    if (answerData.isCorrect) {
+                        answerDiv.classList.add('correct');
+                        answerDiv.classList.remove('selected');
+                    } else if (selectedAnswers.length > 0 && index === selectedAnswers[0]) {
+                        answerDiv.classList.add('incorrect');
+                        answerDiv.classList.remove('selected');
+                    } else {
+                        answerDiv.style.opacity = '0.5';
+                    }
+                });
+                
+            } else {
+                const correctAnswers = currentShuffledAnswers
+                    .map((answer, index) => ({ ...answer, displayIndex: index }))
+                    .filter(answer => answer.isCorrect)
+                    .map(answer => answer.displayIndex);
+                
+                if (selectedAnswers.length > 0) {
+                    const selectedCorrect = selectedAnswers.filter(index => correctAnswers.includes(index));
+                    const selectedIncorrect = selectedAnswers.filter(index => !correctAnswers.includes(index));
+                    
+                    const isFullyCorrect = selectedCorrect.length === correctAnswers.length && selectedIncorrect.length === 0;
+                    if (isFullyCorrect) {
+                        score++;
+                    }
+                    
+                    userAnswers[currentQuestion] = selectedAnswers.map(index => currentShuffledAnswers[index].originalIndex);
+                } else {
+                    userAnswers[currentQuestion] = [];
+                }
+                
+                answers.forEach((answerDiv, index) => {
+                    const checkbox = answerDiv.querySelector('input[type="checkbox"]');
+                    if (checkbox) checkbox.disabled = true;
+                    
+                    const answerData = currentShuffledAnswers[index];
+                    
+                    if (answerData.isCorrect) {
+                        answerDiv.classList.add('correct');
+                        answerDiv.classList.remove('selected');
+                    } else if (selectedAnswers.includes(index)) {
+                        answerDiv.classList.add('incorrect');
+                        answerDiv.classList.remove('selected');
+                    } else {
+                        answerDiv.style.opacity = '0.5';
+                    }
+                });
+            }
+            
+            document.getElementById('validateBtn').style.display = 'none';
+            
+            showExplanationAndNext();
+        }
+
+        function showExplanationAndNext() {
+            const question = questions[currentQuestion];
+            
+            const explanation = document.getElementById('explanation');
+            explanation.textContent = question.explanation;
+            explanation.classList.add('show');
+            
+            document.getElementById('nextBtn').style.display = 'inline-block';
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('questionScreen').classList.remove('active');
+            document.getElementById('resultsScreen').classList.add('active');
+            
+            const percentage = Math.round((score / questions.length) * 100);
+            document.getElementById('finalScore').textContent = `${score}/${questions.length} (${percentage}%)`;
+            
+            updateProgress();
+            
+            const badgeContainer = document.getElementById('badgeContainer');
+            let badges = [];
+            
+            if (percentage >= 90) {
+                badges.push('🏆 Expert IA');
+                badges.push('🚀 Pionnier RH');
+            } else if (percentage >= 70) {
+                badges.push('🎯 Très bon niveau');
+                badges.push('💡 Future adoption');
+            } else if (percentage >= 50) {
+                badges.push('📚 Base solide');
+                badges.push('🌱 En apprentissage');
+            } else {
+                badges.push('🔰 Débutant');
+                badges.push('💪 Motivation à apprendre');
+            }
+            
+            badgeContainer.innerHTML = badges.map(badge => 
+                `<span class="badge">${badge}</span>`
+            ).join('');
+            
+            let message;
+            if (percentage >= 90) {
+                message = "Excellent ! Tu es prêt(e) à intégrer l'IA dans tes processus RH. Explore les outils recommandés ci-dessous.";
+            } else if (percentage >= 70) {
+                message = "Très bien ! Tu as une bonne compréhension de l'IA. Quelques approfondissements et tu seras un expert.";
+            } else if (percentage >= 50) {
+                message = "Bon travail ! Tu as les bases. Continue à te former pour tirer le meilleur parti de l'IA en RH.";
+            } else {
+                message = "C'est un bon début ! L'IA offre de nombreuses opportunités en RH. Les outils ci-dessous t'aideront à démarrer.";
+            }
+            
+            document.getElementById('resultMessage').textContent = message;
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            userAnswers = [];
+            selectedAnswers = [];
+            
+            document.getElementById('resultsScreen').classList.remove('active');
+            document.getElementById('questionScreen').classList.remove('active');
+            document.getElementById('welcomeScreen').classList.add('active');
+            
+            updateProgress();
+        }
+
+        updateProgress();
+    </script>
+</body>
+</html>
